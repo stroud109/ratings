@@ -1,0 +1,23 @@
+{% extends 'master.html' %}
+{% block body %}    
+    {% if ratings %}
+        {% if session.get("user_id") != ratings[0].user_id %}
+            <h1> User {{ratings[0].user_id}}...</h1>
+        
+        {% else %}
+            <h1>You ... </h1>
+
+        {% endif %}
+
+        {% for rating in ratings %}
+            <h2>... gave the movie <a href="/movies/{{rating.movie_id}}">{{rating.movies.name}}</a> a rating of {{rating.rating}} at {{rating.timestamp}}</h2>
+        {% endfor %}
+
+    {% else %}
+    <h1> You have no ratings yet!</h1>
+    <a href="{{url_for("view_all_movies")}}"><h1>Get started rating movies</h1></a>
+
+    {% endif %}
+
+
+{% endblock %}

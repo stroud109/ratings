@@ -1,0 +1,8 @@
+{% extends 'master.html' %}
+{% block body %}    
+     <h1>Movies</h1>
+    {% for movie in movies %}
+    <h2>Name: <a href="/movies/{{movie.id}}"> {{movie.name}}</a>, Release Date: {{movie.released_at}}, <a href="{{movie.imdb_url}}"target="_blank"> IMDB url </a> </h2>
+    {% endfor %}
+
+{% endblock %}

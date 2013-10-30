@@ -52,11 +52,14 @@ class Ratings(Base): # association
 def authenticate(in_email, in_password):
     in_password = hash(in_password)
     user = session.query(User).filter_by(email = in_email, password = in_password).first()
-    print user
     if user != None:
         return user.id
     else:
         return None
+
+def add_rating(new_rating):
+    session.add(new_rating)
+    session.commit()
 
 def main():
     """In case we need this for something"""
