@@ -1,0 +1,19 @@
+<html>
+    <head>
+        <title>Rating Machine</title>
+<!--         <link href="/static/css/bootstrap.css" rel="stylesheet">
+        <link href="/static/css/main.css" rel="stylesheet"> -->
+    </head>
+    <body>
+        <div class="container">
+
+
+            {% if session.get("user_id") %}
+            <div id="logout">   
+                <a href="/clear">logout</a>
+            </div>
+            {% endif %}
+            {% block body %}{% endblock %}
+        </div>
+    </body>
+</html>

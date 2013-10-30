@@ -1,15 +1,20 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy import Column, Integer, String, Date, DateTime
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship, backref
 
-ENGINE = None
-Session = None
+engine = create_engine("sqlite:///ratings.db", echo=False)
+session = scoped_session(sessionmaker(bind=engine,
+                                      autocommit = False,
+                                      autoflush = False))
 
 Base = declarative_base()
+Base.query = session.query_property()
 
 ### Class declarations go here
-class User(Base):
+class User(Base): # child
     __tablename__ = "users"
 
     id = Column(Integer, primary_key = True)
@@ -18,7 +23,7 @@ class User(Base):
     age = Column(Integer, nullable = True)
     zipcode = Column(String(15), nullable = True)
 
-class Movies(Base):
+class Movies(Base): # parent
     __tablename__ = "movies"
 
     id = Column(Integer, primary_key = True)
@@ -27,26 +32,31 @@ class Movies(Base):
     #DD-Mon-YYYY
     imdb_url = Column(String(300), nullable = True)
 
-
-class Ratings(Base):
+class Ratings(Base): # association
     __tablename__ = "ratings"
     id = Column(Integer, primary_key = True)
-    movie_id = Column(Integer(), nullable = True)
-    user_id = Column(Integer(), nullable = True)
+    movie_id = Column(Integer(), ForeignKey('movies.id'), nullable = True)
+    user_id = Column(Integer(), ForeignKey('users.id'), nullable = True)
     timestamp = Column(DateTime(), nullable = True)
     #unix seconds since 1/1/1970
     rating = Column(Integer(), nullable = True)
 
+    user = relationship("User",
+                        backref=backref("ratings", order_by=id))
+    movies = relationship("Movies", 
+                        backref=backref("ratings", order_by=id))
+
+
 ### End class declarations
 
-def connect():
-    global ENGINE
-    global Session
-
-    ENGINE = create_engine("sqlite:///ratings.db", echo=True)
-    Session = sessionmaker(bind=ENGINE)
-
-    return Session()
+def authenticate(in_email, in_password):
+    in_password = hash(in_password)
+    user = session.query(User).filter_by(email = in_email, password = in_password).first()
+    print user
+    if user != None:
+        return user.id
+    else:
+        return None
 
 def main():
     """In case we need this for something"""
