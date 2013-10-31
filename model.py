@@ -4,6 +4,7 @@ from sqlalchemy import Column, Integer, String, Date, DateTime
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, backref
+import correlation
 
 engine = create_engine("sqlite:///ratings.db", echo=False)
 session = scoped_session(sessionmaker(bind=engine,
@@ -22,6 +23,22 @@ class User(Base): # child
     password = Column(String(64), nullable = True)
     age = Column(Integer, nullable = True)
     zipcode = Column(String(15), nullable = True)
+
+    def similarity(self, other):
+        u_ratings = {}
+        paired_ratings = []
+        for r in self.ratings:
+            u_ratings[r.movie_id] = r
+
+        for r in other.ratings:
+            u_r = u_ratings.get(r.movie_id)
+            if u_r:
+                paired_ratings.append((u_r.rating, r.rating))
+
+        if paired_ratings:
+            return correlation.pearson(paired_ratings)
+        else:
+            return 0.0
 
 class Movies(Base): # parent
     __tablename__ = "movies"
@@ -60,6 +77,23 @@ def authenticate(in_email, in_password):
 def add_rating(new_rating):
     session.add(new_rating)
     session.commit()
+
+def rating_prediction(user, movie):
+    ratings = user.ratings
+    other_ratings = movie.ratings
+    other_users = []
+    for r in other_ratings:
+        other_users.append(r.user)
+    users = []
+    for other_u in other_users:
+        similarity = user.similarity(other_u)
+        pair = (similarity, other_u)
+        users.append(pair)
+    sorted_users = sorted(users, reverse = True)
+    top_user = sorted_users[0]
+
+    #this function returns a top-matching-user, but does not predict any rating yet.
+    #unsure as to the application of the ratings variable
 
 def main():
     """In case we need this for something"""
