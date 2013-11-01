@@ -30,7 +30,7 @@ def sign_in():
     return redirect(url_for("index"))
 
 @app.route("/users")
-def view_all_users(): #same as index, above
+def view_all_users():
     user_list = model.session.query(model.User).limit(20).all()
     return render_template("user_list.html", users = user_list)
 
@@ -47,31 +47,39 @@ def view_all_movies():
     return render_template("movies.html", movies = movie_list)
 
 @app.route("/movies/<movie_id>")
-def view_movie(movie_id): # change to display movie title, not ID
+def view_movie(movie_id):
     movie_details = model.session.query(model.Ratings).filter_by(movie_id=movie_id).all()
     movie = model.session.query(model.Movies).filter_by(id = movie_id).one()
     user_id = session.get('user_id')
+    the_eye = model.session.query(model.User).filter_by(id=946).one()
     prediction = None
+    eye_rating = None
     if user_id:
         rating = model.session.query(model.Ratings).filter_by(movie_id = movie_id, user_id = user_id).all()
         if not rating:
             user = model.session.query(model.User).filter_by(id = user_id).one()
-            prediction = model.rating_prediction(user, movie)
-            effective_prediction = prediction
+            prediction = user.rating_prediction(movie)
+            effective_rating = prediction
 
-            thet_eye = model.session.query(model.User).filter_by(id=946).one()
-            eye_rating = model.session.query(model.Ratings).filter_by(user_id = thet_eye.id, movie_id = movie.id).first()
+            eye_rating = model.session.query(model.Ratings).filter_by(user_id = the_eye.id, movie_id = movie.id).first()
         else:
-            effective_prediction = rating[0].rating
-            
+            effective_rating = rating[0].rating
+
         if not eye_rating:
-            eye_rating = thet_eye.rating_prediction(movie)
+            eye_rating = the_eye.rating_prediction(movie)
         else:
             eye_rating = eye_rating.rating
 
-        difference = abs(eye_rating - effective_prediction)
+        difference = abs(eye_rating - effective_rating)
 
-    return render_template("movie_ratings.html", details = movie_details, rating = rating, prediction = prediction, difference = difference)
+        messages = [ "I suppose you don't have such bad taste after all.",
+             "I regret every decision that I've ever made that has brought me to listen to your opinion.",
+             "Words fail me, as your taste in movies has clearly failed you.",
+             "That movie is great. For a clown to watch. Idiot.",]
+
+        beratement = messages[int(difference)]
+
+    return render_template("movie_ratings.html", details = movie_details, rating = rating, prediction = prediction, beratement = beratement)
 
 @app.route("/movies/<movie_id>", methods=["POST"])
 def rate_movie(movie_id):

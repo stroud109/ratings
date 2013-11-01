@@ -42,15 +42,28 @@ class User(Base): # child
         else:
             return 0.0
 
+    def rating_prediction(self, movie):
+        other_ratings = movie.ratings
+        similarities = [ (self.similarity(rating.user), rating) for rating in other_ratings ]
+        similarities.sort(reverse=True)
+        pos_sim = [ s for s in similarities if s[0] > 0]
+        if not pos_sim:
+            return None
+        numerator = sum([r.rating * similarity for similarity, r in pos_sim])
+        denominator = sum([similarity[0] for similarity in pos_sim])
+        print numerator, denominator
+        print numerator/denominator
+        return numerator/denominator
+
 class Movies(Base): # parent
     __tablename__ = "movies"
 
     id = Column(Integer, primary_key = True)
     name = Column(String(64), nullable = True)
-    released_at = Column(Date(), nullable = True)    
+    released_at = Column(Date(), nullable = True)
     #DD-Mon-YYYY
     imdb_url = Column(String(300), nullable = True)
-    
+
 
 class Ratings(Base): # association
     __tablename__ = "ratings"
@@ -63,7 +76,7 @@ class Ratings(Base): # association
 
     user = relationship("User",
                         backref=backref("ratings", order_by=id))
-    movies = relationship("Movies", 
+    movies = relationship("Movies",
                         backref=backref("ratings", order_by=id))
 
 
@@ -81,18 +94,7 @@ def add_rating(new_rating):
     session.add(new_rating)
     session.commit()
 
-def rating_prediction(self, movie):
-    other_ratings = movie.ratings
-    similarities = [ (self.similarity(rating.user), rating) for rating in other_ratings ]
-    similarities.sort(reverse=True)
-    pos_sim = [ s for s in similarities if s[0] > 0]
-    if not pos_sim:
-        return None
-    numerator = sum([r.rating * similarity for similarity, r in pos_sim])
-    denominator = sum([similarity[0] for similarity in pos_sim])
-    print numerator, denominator
-    print numerator/denominator
-    return numerator/denominator
+
 
     # users = []
     # for other_u in other_users:
