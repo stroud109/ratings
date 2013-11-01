@@ -1,5 +1,5 @@
 from flask import Flask, render_template, redirect, request, session, url_for, flash
-import datetime
+import datetime, random
 import model
 app = Flask(__name__)
 app.secret_key = "shhhhhhhhhhhhhhsupersecretthing"
@@ -8,9 +8,11 @@ app.secret_key = "shhhhhhhhhhhhhhsupersecretthing"
 def index():
     return render_template("index.html")
 
-# @app.route("/", methods=["POST"])
-# def sign_up():
-#     pass
+@app.route("/search")
+def search():
+    search_term = request.args.get("search")
+    search_results = model.session.query(model.Movies).filter(model.Movies.name.like("%"+search_term+"%"))
+    return render_template('search.html', search_results = search_results, search_term = search_term)
 
 @app.route("/", methods=["POST"])
 def sign_in():
@@ -39,22 +41,47 @@ def view_user_ratings(user_id):
 
 @app.route("/movies")
 def view_all_movies():
-    movie_list = model.session.query(model.Movies).limit(100).all()
+    random_start = random.randint(0, 1500)
+    random_end = random_start + 100
+    movie_list = model.session.query(model.Movies).filter(model.Movies.id > random_start, model.Movies.id < random_end).all()
     return render_template("movies.html", movies = movie_list)
 
 @app.route("/movies/<movie_id>")
 def view_movie(movie_id): # change to display movie title, not ID
     movie_details = model.session.query(model.Ratings).filter_by(movie_id=movie_id).all()
-    return render_template("movie_ratings.html", details = movie_details)
+    movie = model.session.query(model.Movies).filter_by(id = movie_id).one()
+    user_id = session.get('user_id')
+    prediction = None
+    if user_id:
+        rating = model.session.query(model.Ratings).filter_by(movie_id = movie_id, user_id = user_id).all()
+        if not rating:
+            user = model.session.query(model.User).filter_by(id = user_id).one()
+            prediction = model.rating_prediction(user, movie)
+            effective_prediction = prediction
+
+            thet_eye = model.session.query(model.User).filter_by(id=946).one()
+            eye_rating = model.session.query(model.Ratings).filter_by(user_id = thet_eye.id, movie_id = movie.id).first()
+        else:
+            effective_prediction = rating[0].rating
+            
+        if not eye_rating:
+            eye_rating = thet_eye.rating_prediction(movie)
+        else:
+            eye_rating = eye_rating.rating
+
+        difference = abs(eye_rating - effective_prediction)
+
+    return render_template("movie_ratings.html", details = movie_details, rating = rating, prediction = prediction, difference = difference)
 
 @app.route("/movies/<movie_id>", methods=["POST"])
 def rate_movie(movie_id):
     print "rating movie"
     rating = request.form.get("ratingRadio")
-    new_rating = model.Ratings(movie_id = movie_id, user_id = session.get("user_id"), timestamp = datetime.datetime.now(), rating = rating)
-    model.add_rating(new_rating) #add + commit
+    if rating:
+        new_rating = model.Ratings(movie_id = movie_id, user_id = session.get("user_id"), timestamp = datetime.datetime.now(), rating = rating)
+        model.add_rating(new_rating) #add + commit
 
-    flash("Your rating has been recorded!")
+        flash("Your rating has been recorded!")
     return redirect(url_for("view_movie", movie_id = movie_id))
 
 

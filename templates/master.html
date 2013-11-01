@@ -28,6 +28,10 @@
                 <a href="/clear">logout</a>
             </div>
             {% endif %}
+            <form method="GET" action="/search" id="search">
+                    <input type="text" class="form-control" placeholder="Search for a movie" name="search"> 
+                    <button type="submit" class="btn btn-default">Submit</button>
+            </form>
             {% block body %}{% endblock %}
         </div>
     </body>

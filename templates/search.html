@@ -1,0 +1,10 @@
+{% extends 'master.html' %}
+{% block body %}
+<h1> search results for "{{search_term}}"</h2>
+    <ul>
+        {% for movie in search_results %}
+      <li>   <a href="/movies/{{movie.id}}"> {{movie.name}}</a> |  <a href="{{movie.imdb_url}}"target="_blank"> IMDB url </a></li>
+    {% endfor %}
+    </ul>
+
+{% endblock %}

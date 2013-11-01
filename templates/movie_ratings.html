@@ -4,6 +4,13 @@
     <h1>Movie Details for <a href="{{details[0].movies.imdb_url}}" target="_blank">{{details[0].movies.name}}</a></h1>
 
     {% if session.get("user_id") %}
+
+    {% if not rating %}
+    <h2>Prediction: {{prediction}}</h2>
+    {% else %}
+    <h2> You rated this a: {{rating[0].rating}}</h2>
+    {% endif %}
+
     <h2>rate this movie</h2>
     <form method="POST" action="/movies/{{details[0].movie_id}}">
         <div class="radio-inline">

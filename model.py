@@ -36,7 +36,9 @@ class User(Base): # child
                 paired_ratings.append((u_r.rating, r.rating))
 
         if paired_ratings:
+            # print paired_ratings
             return correlation.pearson(paired_ratings)
+
         else:
             return 0.0
 
@@ -48,6 +50,7 @@ class Movies(Base): # parent
     released_at = Column(Date(), nullable = True)    
     #DD-Mon-YYYY
     imdb_url = Column(String(300), nullable = True)
+    
 
 class Ratings(Base): # association
     __tablename__ = "ratings"
@@ -78,22 +81,31 @@ def add_rating(new_rating):
     session.add(new_rating)
     session.commit()
 
-def rating_prediction(user, movie):
-    ratings = user.ratings
+def rating_prediction(self, movie):
     other_ratings = movie.ratings
-    other_users = []
-    for r in other_ratings:
-        other_users.append(r.user)
-    users = []
-    for other_u in other_users:
-        similarity = user.similarity(other_u)
-        pair = (similarity, other_u)
-        users.append(pair)
-    sorted_users = sorted(users, reverse = True)
-    top_user = sorted_users[0]
+    similarities = [ (self.similarity(rating.user), rating) for rating in other_ratings ]
+    similarities.sort(reverse=True)
+    pos_sim = [ s for s in similarities if s[0] > 0]
+    if not pos_sim:
+        return None
+    numerator = sum([r.rating * similarity for similarity, r in pos_sim])
+    denominator = sum([similarity[0] for similarity in pos_sim])
+    print numerator, denominator
+    print numerator/denominator
+    return numerator/denominator
 
-    #this function returns a top-matching-user, but does not predict any rating yet.
-    #unsure as to the application of the ratings variable
+    # users = []
+    # for other_u in other_users:
+    #     similarity = user.similarity(other_u)
+    #     pair = (similarity, other_u)
+    #     users.append(pair)
+    # sorted_users = sorted(users, reverse = True)
+    # top_user = sorted_users[0]
+
+    # top_user_rating = session.query(Ratings).filter_by(user_id = top_user[1].id, movie_id = movie.id).one()
+    # top_user_rating = top_user_rating.rating
+    # predicted_rating = top_user[0] * top_user_rating
+    # return predicted_rating
 
 def main():
     """In case we need this for something"""
